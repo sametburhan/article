@@ -1,0 +1,248 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{algorithmicx}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{orcidlink}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+\title{Low-Cost, High-Precision LoRa-Based Indoor Localization Supported by Hybrid Model Neural Network and Implemented in Autonomous Delivery Robots}
+\author{
+\IEEEauthorblockN{1\textsuperscript{st} Samet Burhan
+\orcidlink{0009-0007-9088-7870}}
+\IEEEauthorblockA{\textit{Department of Mechatronics Engineering}  \\
+\textit{Yildiz Technical University}\\
+Istanbul, Turkey\\
+samet.burhan@std.yildiz.edu.tr}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Muhammed Saidnur Caliskan}
+\IEEEauthorblockA{\textit{Mechatronics Engineering} \\
+\textit{Yildiz Technical University}\\
+Istanbul, Turkey \\
+saidnur7777@gmail.com}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Tolga Selimoglu \orcidlink{0009-0000-6050-7119}}
+\IEEEauthorblockA{\textit{Mechatronics Engineering} \\
+\textit{Yildiz Technical University}\\
+Istanbul, Turkey \\
+tolgaselimoglu1@gmail.com}
+}
+\maketitle
+
+\begin{abstract}
+This paper presents the design, implementation, and testing of a cost-effective indoor localization and navigation system for autonomous delivery robots in Industry 4.0 factory environments. Traditional GPS-based solutions fail indoors due to signal obstruction, leading to localization errors and operational inefficiencies. To overcome these challenges, we integrate LoRa-based communication with RSSI modeling, LIDAR, IMU, and advanced sensor fusion algorithms (Extended Kalman Filter, AMCL). A neural network model (LSTM + FFNN) was developed for robust RSSI-to-distance estimation. Experimental results show improved localization accuracy and navigation reliability compared to baseline approaches. The proposed system provides a scalable, low-cost, and adaptable solution for industrial automation.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Autonomous Delivery Robots, Indoor Localization, LoRa Communication, LIDAR, IMU, RSSI Modeling, Industry 4.0, Robot Operating System (ROS), Hybrid Neural Networks, Distance Estimation
+\end{IEEEkeywords}
+
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%%
+
+
+\section{Introduction}
+The demand for autonomous delivery robots in Industry 4.0 environments has grown rapidly, with applications in warehouses, factories, and healthcare facilities. However, accurate indoor localization remains a challenge due to the unavailability of GPS signals and the limitations of existing solutions. Incorrect localization can lead to navigation errors, collisions, and workflow disruptions. This paper proposes a hybrid localization system combining LoRa-based communication, sensor fusion, and neural network-based distance estimation.
+% TODO: Add statistics or references about market demand and importance.
+
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%%
+
+
+\section{Related Work}
+Indoor localization has been extensively studied using technologies such as Wi-Fi fingerprinting, Ultra-Wideband (UWB), and vision-based systems. LoRa has recently emerged as a promising alternative due to its long-range, low-power characteristics. However, RSSI values are noisy and unreliable in complex indoor environments. Previous studies applied filtering and regression methods, but few have combined LoRa with advanced neural networks and sensor fusion for autonomous robots.
+% TODO: Expand this section with at least 5 IEEE-style references.
+% AoA
+% TDoA
+% ToA (selected)
+
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%%
+
+
+\section{System Design}
+The proposed system consists of a mobile rover and a stationary base station. The rover integrates:
+\begin{itemize}
+\item NVIDIA Jetson Nano (central processing unit) x1
+\item RPLidar A2 (2D mapping) x1
+\item SBG Ellipse-N IMU + GNSS module x1
+\item LoRa Ebyte E22-900T module x2
+\item Motor driver (BTS7960 H-Bridge) x1
+\item ESP32 Dev board (motor controller) x1
+\item DC motor x1 and Servo motor x1
+\end{itemize}
+
+\subsection{Autonomous System}
+The vehicle was driven manually through the designated test area, where all subsystems were evaluated. During this process, an environmental map was created using RViz software, which would form the basis for subsequent autonomous navigation.
+
+The 2D LIDAR sensor improves localization accuracy by matching scans to a pre-generated map, while RSSI-based LoRa measurements will improve localization by narrowing uncertainty distributions, especially in indoor environments where GNSS is limited. IMU data will aid in short-term motion estimation and orientation accuracy, especially in areas with GPS outages or poor LIDAR performance.
+% ros topics
+
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%%
+
+
+\section{Neural Network RSSI Estimation}
+To address noise and multipath effects in RSSI signals, we designed a hybrid neural network with two LSTM layers followed by dense FFNN layers. The model was trained on ~12,000 samples collected in an indoor test environment. Hyperparameter optimization was conducted to minimize RMSE. The best-performing model achieved a correlation coefficient of $R=0.98$ and RMSE of approximately 131 cm.
+% TODO: Add training curves, actual vs estimated plots.
+
+The "Actual vs. estimated" graph compares the actual distance and estimated distance for each individual sample. In this visualization, blue squares represent the actual distances, while orange circles denote the estimated distances.
+
+\subsection{Signal Filtering}
+The antenna signal strength obtained from the LoRa communication module is highly sensitive and contains significant noise. Additionally, even minor obstacles between antennas can cause variations in signal strength. Therefore, it is anticipated that training a model directly with raw data may not yield reliable results. To minimize errors, the implementation of various filtering techniques has been considered.
+
+Multiple filters are used to reduce sudden fluctuations and possible path loss effects in raw data. Low pass filter, particle filter and finally moving average are applied. After this filtering layer, it will be fed to the artificial neural network. The distance value estimated by the artificial neural network, which will be fed with the filtered data both in the data collection phase and in the operational state after training, will reach its final value with a moving average filter again. The required number of accidents and settings for the filters were determined and used in the optimum way by tuning.
+
+\subsection{Neural Network Architecture}
+Radio Signal Strength Indicator (RSSI) is a parameter frequently used in distance estimation and localization tasks in wireless networks. However, RSSI signals are highly variable due to environmental noise, obstacles, and multipath effects. Therefore, robust regression models are necessary for reliable estimation on such noisy data. In this study, distance estimation from RSSI values is performed with a hybrid deep learning model combining LSTM (Long Short-Term Memory) and FFNN (Feedforward Neural Network) layers.
+
+The proposed model consists of two LSTM layers followed by fully connected layers (FFNN), forming a hybrid deep neural network, as visualized in Figure.
+
+• LS1: LSTM Layer 1, LS2: LSTM Layer 2, FF1: FFNN Layer 1, FF2: FFNN Layer 2, LR: Learning Rate, EP: Epoch, DP: Dropout
+
+The dataset collected from the test environment was obtained at specific distance intervals, such as $0, 2, 4, 5, 7, 9 ... 25$ meters, where measurements were relatively more stable. Comprising approximately 12,000 samples, the dataset exhibits a logarithmic distribution pattern.
+
+\subsection{Model Optimization}
+The dataset was split in a time-ordered manner into $80\%$ training and $20\%$ testing subsets. A sample pool of possible hyperparameters was constructed for model optimization. During the optimization process, random parameter combinations were selected from this pool, and a loop of 100 iterations was executed.
+
+\subsubsection{LSTM Layers}
+LSTM networks are designed to learn and remember temporal dependencies in 
+sequential data. Each LSTM cell operates according to the following equations at each time step $t$.
+
+\begin{equation}
+f_t = \sigma(W_f \cdot [h_{t-1}, x_t] + b_f)
+\end{equation}
+\begin{equation}
+i_t = \sigma(W_i \cdot [h_{t-1}, x_t] + b_i)
+\end{equation}
+\begin{equation}
+\tilde{C}_t = \tanh(W_c \cdot [h_{t-1}, x_t] + b_c)
+\end{equation}
+\begin{equation}
+C_t = f_t \odot C_{t-1} + i_t \odot \tilde{C}_t
+\end{equation}
+\begin{equation}
+o_t = \sigma(W_o \cdot [h_{t-1}, x_t] + b_o)
+\end{equation}
+\begin{equation}
+h_t = o_t \odot \tanh(C_t)
+\end{equation}
+
+\subsubsection{FFNN Layers}
+The output from the LSTM layers is passed through two fully connected layers (dense layers) to enable complex nonlinear regression.
+
+\begin{equation}
+y = \sigma(W_x + b)
+\end{equation}
+
+\subsubsection{ReLU Layer}
+The Rectified Linear Unit (ReLU) activation function, is widely used in deep neural networks due to its computational efficiency and effectiveness in mitigating the vanishing gradient problem. 
+
+\begin{equation}
+f(x) = \max(0, x)
+\end{equation}
+
+\subsubsection{Model Training and Loss Functions}
+The loss function for training is Mean Squared Error (MSE):
+
+\begin{equation}
+MSE = \frac{1}{N}\sum_{i=1}^{N}(y_i - \hat{y}_i)^2
+\end{equation}
+
+The model performance is also evaluated using Root Mean Squared Error (RMSE):
+
+\begin{equation}
+RMSE = \sqrt{MSE}
+\end{equation}
+
+Best Params: LS1:100, LS2:75, FF1:100, FF2:75, LR:0.001, EP:150, DP:0.1
+ 
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%% 
+
+ 
+\subsection{Neural Network Model Performance Metrics}
+The ideal parameters determined by hyperparameter optimization were used for model training, and various performance outputs were obtained with many different iterations throughout the project. Performance criteria were generally examined under five main headings. Metrics: RMSE, estimation error (loss), correlation, sample-based comparison, model estimation pattern.
+
+In evaluating the model performance output, several criteria are considered sequentially. First, the Root Mean Square Error (RMSE) is assessed, with lower values indicating better performance. Next, the deviation in estimation error is examined, followed by an evaluation of how closely the correlation value (R) approaches 1. Finally, any irregularities in the estimation pattern of the model are analyzed by visual inspection of the estimation output graph.
+
+As illustrated in the model estimation pattern graph, the estimated RSSI (Received Signal Strength Indicator) values are represented by red squares, while the actual RSSI measurements are shown as blue circles, both plotted against distance. Typically, the RSSI value decreases (that is, its absolute value increases) as the distance between the transmitter and receiver increases. The general trend in the graph indicates that both the estimated and actual RSSI values decline with increasing distance.
+
+The RMSE (Root Mean Square Error) graph illustrates the RMSE values for each individual sample index. The overall RMSE value is indicated at the top of the graph as "Total $RMSE = 131.8189$."
+
+The correlation plot illustrates the relationship between the target values and the model’s output. The correlation coefficient, $R = 0.98458$, represents the strength of the linear association between these two variables. The solid blue line indicates the model’s regression fit, while the dashed line corresponds to the ideal Y = T (Output = Target) reference line.
+
+The estimation error plot displays the difference between actual and estimated values (Actual - estimated) for each individual sample. The error values are represented by blue circles distributed around zero.
+
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%%
+
+
+\section{Results and Discussion}
+The system was evaluated across mechanical, electronic, and software dimensions:
+\begin{itemize}
+\item \textbf{Mechanical:} The rover chassis was optimized for sensor placement and stability.
+\item \textbf{Electronic:} Dual-battery system ensured reliable power delivery; low-voltage cutoff circuits protected sensitive components.
+\item \textbf{Localization Accuracy:} Neural network-based RSSI estimation significantly reduced distance estimation error.
+\item \textbf{Navigation:} Real-time SLAM and obstacle avoidance enabled safe traversal in dynamic indoor environments.
+\end{itemize}
+Overall, the results demonstrate improved localization robustness and practical viability for Industry 4.0 factories.
+% TODO: Provide quantitative test results, tables of error metrics.
+
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%%
+
+
+\section{Conclusion and Future Work}
+This paper proposed a LoRa-based RTK-inspired indoor localization system for autonomous robots. By combining RSSI modeling, neural networks, and sensor fusion, the system improves navigation reliability in GPS-denied environments. Future work includes extending the approach to multi-robot coordination, integrating 5G/LoRa hybrid communication, and conducting long-term deployment tests in real factory settings.
+
+
+%%-------------------------------------------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------------%%
+
+
+\section*{Acknowledgment}
+The authors would like to thank Prof. Dr. Aydin Yesildirek for his supervision and guidance.
+
+\begin{thebibliography}{00}
+\bibitem{b1} S. Mahfouz, F. Mourad-Chehade, P. Honeine, J. Farah and H. Snoussi, "Non-Parametric and Semi Parametric RSSI/Distance Modeling for Target Tracking in Wireless Sensor Networks," in IEEE Sensors Journal, vol. 16, no. 7, pp. 2115-2126, April1, 2016, doi: 10.1109/JSEN.2015.2510020.
+
+\bibitem{b2} X. Ju, D. Xu and H. Zhao, "Scene-Aware Error Modeling of LiDAR/Visual Odometry for Fusion-Based Vehicle Localization," in IEEE Transactions on Intelligent Transportation Systems, vol. 23, no. 7, pp. 6480 6494, July 2022, doi: 10.1109/TITS.2021.3058054
+
+\bibitem{b3} Y. Wang, Q. Ye, J. Cheng and L. Wang, "RSSI-based Bluetooth indoor localization", Proc. 11th Int. Conf. Mobile Ad-Hoc Sensor Netw., pp. 165-171, Dec. 2015.
+
+\bibitem{b4} K.-H. Lam, C.-C. Cheung, and W.-C. Lee, "RSSI-Based LoRa Localization Systems for Large-Scale Indoor and Outdoor Environments," *IEEE Transactions on Vehicular Technology*, vol. 68, no. 12, pp. 11778-11791, Dec. 2019. DOI: 10.1109/TVT.2019.2940272.
+
+\bibitem{b5} B. C. Fargas and M. N. Petersen, "GPS-free geolocation using LoRa in low-power WANs", Proc. Global Internet Things Summit, pp. 1-6, Jun. 2017.
+
+\bibitem{b6} Zunino, G. \& Christensen, Henrik. (2001). Simultaneous localization and mapping in domestic.
+
+% 15 adet daha kaynak eklenecek
+
+\end{thebibliography}
+\end{document}
